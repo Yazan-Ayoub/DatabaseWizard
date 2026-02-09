@@ -1,0 +1,170 @@
+@{
+    ViewData["Title"] = "Database Wizard";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center my-4">🧙‍♂️ Database Wizard</h1>
+        <p class="text-center text-muted">Create your SQL Server database schema with a few clicks</p>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <form id="databaseForm">
+                    <!-- Database Name -->
+                    <div class="mb-4">
+                        <label for="databaseName" class="form-label fw-bold">Database Name</label>
+                        <input type="text" class="form-control" id="databaseName" placeholder="MyDatabase" required />
+                        <div class="form-text">Must start with a letter and contain only letters, numbers, and underscores</div>
+                    </div>
+
+                    <!-- Tables Section -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Tables</h4>
+                            <button type="button" class="btn btn-success" id="addTableBtn">+ Add Table</button>
+                        </div>
+                        <div id="tablesContainer"></div>
+                    </div>
+
+                    <!-- Relations Section -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Relations (Foreign Keys)</h4>
+                            <button type="button" class="btn btn-info" id="addRelationBtn">+ Add Relation</button>
+                        </div>
+                        <div id="relationsContainer"></div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary" id="previewBtn">Preview SQL</button>
+                        <button type="submit" class="btn btn-primary">Create Database</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div id="resultSection" class="card shadow-sm d-none">
+            <div class="card-body">
+                <h4 id="resultTitle"></h4>
+                <div id="resultMessage"></div>
+                <div id="sqlPreview" class="d-none">
+                    <h5 class="mt-3">Generated SQL:</h5>
+                    <pre class="bg-light p-3 rounded"><code id="sqlCode"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Template -->
+    <template id="tableTemplate">
+        <div class="card mb-3 table-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <input type="text" class="form-control form-control-sm w-50 table-name" placeholder="TableName" required />
+                <button type="button" class="btn btn-sm btn-danger remove-table-btn">Remove</button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Columns</label>
+                    <div class="columns-container"></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-column-btn mt-2">+ Add Column</button>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-bold">Primary Key</label>
+                    <select class="form-select primary-key-select" required>
+                        <option value="">Select a column as primary key</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Column Template -->
+    <template id="columnTemplate">
+        <div class="row mb-2 column-row">
+            <div class="col-md-3">
+                <input type="text" class="form-control form-control-sm column-name" placeholder="Column Name" required />
+            </div>
+            <div class="col-md-3">
+                <select class="form-select form-select-sm column-datatype" required>
+                    <option value="">Select Type</option>
+                    <option value="INT">INT</option>
+                    <option value="BIGINT">BIGINT</option>
+                    <option value="VARCHAR">VARCHAR</option>
+                    <option value="NVARCHAR">NVARCHAR</option>
+                    <option value="DECIMAL">DECIMAL(18,2)</option>
+                    <option value="DATETIME">DATETIME</option>
+                    <option value="DATETIME2">DATETIME2</option>
+                    <option value="DATE">DATE</option>
+                    <option value="BIT">BIT</option>
+                    <option value="UNIQUEIDENTIFIER">UNIQUEIDENTIFIER</option>
+                    <option value="TEXT">TEXT</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="number" class="form-control form-control-sm column-length" placeholder="Length" />
+            </div>
+            <div class="col-md-2">
+                <div class="form-check">
+                    <input class="form-check-input column-nullable" type="checkbox" />
+                    <label class="form-check-label">Nullable</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-sm btn-outline-danger remove-column-btn">Remove</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- Relation Template -->
+    <template id="relationTemplate">
+        <div class="card mb-2 relation-card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-5">
+                        <label class="form-label">Parent Table.Column</label>
+                        <div class="input-group">
+                            <select class="form-select form-select-sm parent-table-select" required>
+                                <option value="">Select Table</option>
+                            </select>
+                            <select class="form-select form-select-sm parent-column-select" required>
+                                <option value="">Select Column</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-1 text-center">
+                        <label class="form-label">&nbsp;</label>
+                        <div>→</div>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Child Table.Column</label>
+                        <div class="input-group">
+                            <select class="form-select form-select-sm child-table-select" required>
+                                <option value="">Select Table</option>
+                            </select>
+                            <select class="form-select form-select-sm child-column-select" required>
+                                <option value="">Select Column</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="btn btn-sm btn-danger remove-relation-btn">Remove</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="~/js/site.js"></script>
+</body>
+</html>
